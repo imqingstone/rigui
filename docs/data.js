@@ -1,0 +1,89 @@
+// 日晷：所有數值與文字。規則在 engine.js。
+const RG_DATA = {
+  // 十二時辰，依序從子時開始。值班的官依「子午流注」的傳統說法；官名與原文出自《素問・靈蘭秘典論》。
+  HOURS: [
+    { id: '子', time: '23–1', organ: '膽', title: '中正之官', line: '膽者，中正之官，決斷出焉。', suit: '夜半為冬，古人認為此時宜安睡' },
+    { id: '丑', time: '1–3', organ: '肝', title: '將軍之官', line: '肝者，將軍之官，謀慮出焉。', suit: '夜最深的時候，傳統的說法是宜熟睡' },
+    { id: '寅', time: '3–5', organ: '肺', title: '相傅之官', line: '肺者，相傅之官，治節出焉。', suit: '天還沒亮，傳統的說法是宜續睡' },
+    { id: '卯', time: '5–7', organ: '大腸', title: '傳道之官', line: '大腸者，傳道之官，變化出焉。', suit: '「平旦人氣生」，天亮時起身活動' },
+    { id: '辰', time: '7–9', organ: '胃', title: '倉廩之官', line: '脾胃者，倉廩之官，五味出焉。', suit: '胃當值，傳統的說法是宜進早膳' },
+    { id: '巳', time: '9–11', organ: '脾', title: '倉廩之官', line: '脾胃者，倉廩之官，五味出焉。', suit: '上午精神清明，古人常在此時讀書做事' },
+    { id: '午', time: '11–13', organ: '心', title: '君主之官', line: '心者，君主之官也，神明出焉。', suit: '「日中而陽氣隆」，宜午膳，古人也有午休的習慣' },
+    { id: '未', time: '13–15', organ: '小腸', title: '受盛之官', line: '小腸者，受盛之官，化物出焉。', suit: '飯後從容做事、喝茶聊天' },
+    { id: '申', time: '15–17', organ: '膀胱', title: '州都之官', line: '膀胱者，州都之官，津液藏焉，氣化則能出矣。', suit: '下午宜讀書、勞作' },
+    { id: '酉', time: '17–19', organ: '腎', title: '作強之官', line: '腎者，作強之官，伎巧出焉。', suit: '「日入為秋」，宜晚膳，開始收心' },
+    { id: '戌', time: '19–21', organ: '膻中', title: '臣使之官', line: '膻中者，臣使之官，喜樂出焉。', suit: '喜樂出焉，宜與人相聚、泡腳沐浴' },
+    { id: '亥', time: '21–23', organ: '三焦', title: '決瀆之官', line: '三焦者，決瀆之官，水道出焉。', suit: '一天將盡，宜收拾準備就寢' }
+  ],
+  NIGHT: ['亥', '子', '丑', '寅'],
+
+  // 空著（休息）時每個時辰的分數
+  REST: { 子: 3, 丑: 3, 寅: 3, 卯: 1, 辰: 1, 巳: 1, 午: 2, 未: 1, 申: 1, 酉: 1, 戌: 1, 亥: 2 },
+  POINTS: { good: 3, neutral: 1, bad: 0 },
+
+  // 四季作息（《素問・四氣調神大論》）
+  //   rest：覆蓋休息的分數；awakeOk：這些時辰還醒著不扣分；mustSleep：這些時辰該睡了，除了適合的行程都算不合；
+  //   sleepIn：這些時辰繼續睡最好，放了行程最多只算中性。
+  SEASONS: {
+    spring: { name: '春', rule: '夜臥早起', quote: '夜臥早起，廣步於庭。', rest: { 亥: 2, 卯: 0 }, awakeOk: ['亥'], mustSleep: [], sleepIn: [],
+      note: '春天「夜臥早起」：亥時還醒著不要緊，卯時就該起身。' },
+    summer: { name: '夏', rule: '夜臥早起', quote: '夜臥早起，無厭於日。', rest: { 亥: 2, 卯: 0 }, awakeOk: ['亥'], mustSleep: [], sleepIn: [],
+      note: '夏天「夜臥早起」：亥時還醒著不要緊，卯時就該起身。' },
+    autumn: { name: '秋', rule: '早臥早起', quote: '早臥早起。', rest: { 亥: 3, 卯: 1 }, awakeOk: [], mustSleep: ['亥'], sleepIn: [],
+      note: '秋天「早臥早起」：亥時就該就寢。' },
+    winter: { name: '冬', rule: '早臥晚起，必待日光', quote: '早臥晚起，必待日光。', rest: { 亥: 3, 卯: 3 }, awakeOk: [], mustSleep: ['亥'], sleepIn: ['卯'],
+      note: '冬天「早臥晚起，必待日光」：亥時就該就寢，卯時天還沒亮，繼續睡更好。' }
+  },
+
+  // 行程卡。good：適合的時辰；bad：不適合的時辰；其餘為中性。only：專屬某位旅人。
+  CARDS: {
+    sleep: { name: '安睡', desc: '躺下好好睡一覺。', good: ['子', '丑'], bad: ['卯', '辰', '巳', '未', '申', '酉'] },
+    walk: { name: '起身散步', desc: '天一亮就起來，在庭院走走。', good: ['卯'], bad: ['子', '丑'] },
+    breakfast: { name: '早膳', desc: '一碗粥、一顆饅頭、一杯豆漿。', good: ['辰'], bad: ['子', '丑', '亥'] },
+    study: { name: '讀書', desc: '攤開書卷，讀上一個時辰。', good: ['巳', '申'], bad: ['子', '丑'] },
+    work: { name: '勞動', desc: '劈柴、挑水、整理行囊。', good: ['巳', '未', '申'], bad: ['子', '丑', '亥'] },
+    lunch: { name: '午膳', desc: '一碗飯、兩樣青菜、一碗豆腐湯。', good: ['午', '未'], bad: ['子', '丑'] },
+    nap: { name: '小憩', desc: '靠在椅子上閉眼歇一會兒。', good: ['午'], bad: ['丑', '寅', '亥'] },
+    tea: { name: '喝茶聊天', desc: '泡一壺茶，和驛站的人說說話。', good: ['未', '戌'], bad: ['子', '丑'] },
+    dinner: { name: '晚膳', desc: '一碗麵、一盤炒青菜。', good: ['酉'], bad: ['子', '丑'] },
+    bath: { name: '泡腳沐浴', desc: '燒一盆熱水，洗去一天的風塵。', good: ['酉', '戌'], bad: ['午'] },
+    sit: { name: '靜坐', desc: '找個安靜的角落，閉目調息。', good: ['卯', '戌', '亥'], bad: [] },
+    bedtime: { name: '收拾就寢', desc: '整理好明天的行囊，熄燈上床。', good: ['亥'], bad: ['卯', '辰'] },
+    travel: { name: '趕路', desc: '背起行囊，往下一個驛站走。', good: ['辰', '巳', '未', '申'], bad: ['子', '丑', '亥'], only: 'merchant' },
+    farm: { name: '下田', desc: '趁著天涼下田幹活。', good: ['卯', '辰'], bad: ['子', '丑'], only: 'farmer' },
+    paint: { name: '作畫', desc: '鋪紙研墨，畫一幅山水。', good: ['巳', '申'], bad: ['子', '丑'], only: 'painter' }
+  },
+
+  // 旅人。need：特殊需求（引擎依 type 判斷）；沒達成時拿不到最高評等。
+  TRAVELERS: {
+    scholar: { name: '書生', line: '要趕考了，今天想多讀點書。', need: { type: 'count', card: 'study', hours: ['卯', '辰', '巳', '午', '未', '申', '酉'], min: 2, text: '白天讀書至少兩個時辰' } },
+    merchant: { name: '商人', line: '貨要準時送到，得連趕兩個時辰的路。', need: { type: 'consecutive', card: 'travel', min: 2, text: '連續兩個時辰趕路' } },
+    farmer: { name: '農夫', line: '田裡的秧苗等著我，一早就得下田。', need: { type: 'at', card: 'farm', hours: ['卯', '辰'], text: '卯時或辰時下田' } },
+    painter: { name: '畫師', line: '想找一個安靜的時辰，好好畫一幅畫。', need: { type: 'at', card: 'paint', hours: ['巳', '申'], text: '巳時或申時作畫' } },
+    elder: { name: '老者', line: '年紀大了，天一黑就想睡。', need: { type: 'at', card: 'bedtime', hours: ['亥'], text: '亥時收拾就寢' } },
+    wanderer: { name: '青石旅人', line: '沒什麼要緊事，只想順著時辰過一天。', need: null }
+  },
+
+  // 評等（由高到低）
+  RANKS: [
+    { min: 32, name: '日正當中' },
+    { min: 26, name: '晴' },
+    { min: 18, name: '多雲' },
+    { min: -999, name: '陰' }
+  ],
+  // 分享與結果用的符號：分數 → 符號
+  ICONS: { 3: '☀', 2: '🌤', 1: '☁', 0: '🌧' },
+
+  // 里程碑 1：固定一題
+  FIXED: { date: '2026-11-07', term: '立冬', season: 'winter', traveler: 'scholar',
+    cards: ['breakfast', 'study', 'study', 'lunch', 'tea', 'dinner', 'bath'] },
+
+  TEXT: {
+    title: '日晷',
+    subtitle: '替旅人排一天',
+    disclaimer: '本遊戲是古代經典的文化介紹，不構成任何醫療或健康建議。',
+    lineSource: '官名與原文出自《黃帝內經・素問・靈蘭秘典論》；時辰與經絡的對應，是後世依《內經》發展出來的「子午流注」說法。'
+  }
+};
+
+if (typeof module !== 'undefined') module.exports = RG_DATA;

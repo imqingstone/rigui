@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant-TW"><head><meta charset="utf-8"><meta name="format-detection" content="telephone=no"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f6e8cf"><meta name="description" content="日晷，替旅人排一天。把旅人的行程排進十二個時辰，排得順應時辰，值班的官就會亮起來。"><title>日晷・替旅人排一天</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+<header class="top">
+  <div class="brand"><b>日晷</b><span>替旅人排一天</span></div>
+  <div class="when"><span id="date"></span><b id="term"></b><span id="season" class="season"></span></div>
+</header>
+
+<main id="main" tabindex="-1">
+  <section class="traveler" id="traveler" aria-live="polite"></section>
+
+  <section class="dial-wrap" aria-label="日晷：十二時辰">
+    <div class="dial" id="dial">
+      <svg class="face" viewBox="0 0 400 400" aria-hidden="true" id="face"></svg>
+      <div class="center" id="center"><span class="gnomon" id="gnomon"></span><span class="center-text" id="center-text"></span></div>
+    </div>
+  </section>
+
+  <p class="info" id="info" aria-live="polite"></p>
+
+  <section class="tray-wrap" id="tray-wrap">
+    <h2>今天的行程</h2>
+    <div class="tray" id="tray"></div>
+    <div class="actions">
+      <button id="btn-clear" class="ghost" type="button">全部收回</button>
+      <button id="btn-done" class="primary" type="button">定案</button>
+    </div>
+  </section>
+
+  <section class="result" id="result" hidden>
+    <p class="rank-kind">這一天排好了</p>
+    <h2 id="r-rank"></h2>
+    <p class="score"><b id="r-total"></b><span> / </span><span id="r-max"></span></p>
+    <p class="need" id="r-need"></p>
+    <ol class="cells" id="r-cells"></ol>
+    <p class="source" id="r-source"></p>
+    <div class="actions"><button id="btn-again" class="primary" type="button">再排一次</button></div>
+  </section>
+</main>
+
+<footer>
+  <p><span class="seg">本遊戲是古代經典的文化介紹，</span><span class="seg">不構成任何醫療或健康建議。</span></p>
+  <small class="copyright"><span class="seg">© 2026 日晷・古文屬公有領域，</span><span class="seg">其餘內容為原創，未經同意請勿轉載</span></small>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body></html>
