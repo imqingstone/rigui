@@ -389,6 +389,46 @@ test('庭院：依歷來最長的連續天數成長，中斷不會變少', () =>
   ['tree', 'lamp', 'bench'].forEach(id => assert.ok(D.GARDEN.some(g => g.id === id), '規格要求的 ' + id));
 });
 
+// ---------- 里程碑 4 ----------
+test('日出日落：臺北的近似值落在合理範圍', () => {
+  const near = (h, hh, mm) => Math.abs(h - (hh + mm / 60)) <= 8 / 60;
+  const s = E.sunTimes('2026-06-21'), w = E.sunTimes('2026-12-22');
+  assert.ok(near(s.rise, 5, 4) && near(s.set, 18, 47), '夏至');
+  assert.ok(near(w.rise, 6, 35) && near(w.set, 17, 12), '冬至');
+  assert.ok(E.isDark('2026-12-22', 3) && !E.isDark('2026-06-21', 3), '卯時冬暗夏亮');
+  ['子', '丑', '寅', '亥'].forEach(h => assert.ok(E.isDark('2026-06-21', at(h)), h + ' 夏至也是夜晚'));
+  ['辰', '巳', '午', '未', '申'].forEach(h => assert.ok(!E.isDark('2026-12-22', at(h)), h + ' 冬至也是白天'));
+});
+
+test('說明頁：出處都連到維基文庫，附注與免責說明齊全', () => {
+  assert.ok(D.SOURCES.length >= 5);
+  D.SOURCES.forEach(s => { assert.ok(/^https:\/\/zh\.wikisource\.org\/wiki\//.test(s.url), s.title); assert.ok(s.use, s.title); });
+  assert.ok(D.NOTES.some(n => n.includes('子午流注')), '要標明子午流注不是內經原文');
+  assert.ok(D.TEXT.disclaimer.includes('不構成任何醫療或健康建議'));
+});
+
+test('原文：引用的句子與維基文庫核對過的版本一致', () => {
+  const lines = {
+    子: '膽者，中正之官，決斷出焉。', 丑: '肝者，將軍之官，謀慮出焉。', 寅: '肺者，相傅之官，治節出焉。', 卯: '大腸者，傳道之官，變化出焉。',
+    辰: '脾胃者，倉廩之官，五味出焉。', 午: '心者，君主之官也，神明出焉。', 未: '小腸者，受盛之官，化物出焉。',
+    申: '膀胱者，州都之官，津液藏焉，氣化則能出矣。', 酉: '腎者，作強之官，伎巧出焉。', 戌: '膻中者，臣使之官，喜樂出焉。', 亥: '三焦者，決瀆之官，水道出焉。'
+  };
+  Object.entries(lines).forEach(([h, l]) => assert.strictEqual(D.HOURS[at(h)].line, l, h));
+  assert.strictEqual(D.TERM_INFO.立春.hou[2], '魚上冰');
+  assert.strictEqual(D.TERM_INFO.小暑.hou[2], '鷹乃學習');
+  assert.strictEqual(D.TERM_INFO.小滿.hou[2], '小暑至');
+});
+
+test('頁面：回到青石驛、使用次數、GoatCounter 都在', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../docs/index.html'), 'utf8');
+  assert.ok(html.includes('href="https://imqingstone.github.io/"') && html.includes('qingstone.png'));
+  assert.ok(fs.existsSync(path.join(__dirname, '../docs/qingstone.png')));
+  assert.ok(html.includes('id="usage"'));
+  assert.ok(html.includes('data-goatcounter="https://imqingstone.goatcounter.com/count"'));
+  const app = fs.readFileSync(path.join(__dirname, '../docs/app.js'), 'utf8');
+  assert.ok(app.includes("path: 'rigui-play'") && app.includes('counter/rigui-play.json'));
+});
+
 // ---------- 文字 ----------
 const textFiles = () => {
   const dir = path.join(__dirname, '../docs');

@@ -196,6 +196,28 @@ const RG_ENGINE = (function (D, TERMS) {
     return { have, next };
   }
 
+  // ---------- 日出日落（NOAA 的近似算法，誤差約數分鐘） ----------
+  // 回傳當地時間的小時數，例如 6.5 代表 6:30
+  function sunTimes(date) {
+    const { lat, lon, tz } = D.SUN;
+    const [y, m, d] = parts(date);
+    const doy = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86400000) + 1;
+    const g = 2 * Math.PI / 365 * (doy - 1);
+    const eq = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+    const decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+    const rad = Math.PI / 180, phi = lat * rad;
+    const ha = Math.acos(Math.cos(90.833 * rad) / (Math.cos(phi) * Math.cos(decl)) - Math.tan(phi) * Math.tan(decl)) / rad;
+    const rise = (720 - 4 * (lon + ha) - eq) / 60 + tz;
+    const set = (720 - 4 * (lon - ha) - eq) / 60 + tz;
+    return { rise, set };
+  }
+  // 時辰中點（子時為 0 點，丑時 2 點……）是否在日落後、日出前
+  function isDark(date, i) {
+    const { rise, set } = sunTimes(date);
+    const mid = i * 2;
+    return mid < rise || mid > set;
+  }
+
   // ---------- 亂數 ----------
   function hash(str) {
     let h = 2166136261;
@@ -260,7 +282,7 @@ const RG_ENGINE = (function (D, TERMS) {
     ].join('\n');
   }
 
-  return { HOUR_IDS, cellScore, iconFor, suitFor, termRange, streakInfo, garden, taiwanDate, dayNumber, addDays, termOn, hash, rng, travelerFor, makePuzzle, shareText, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
+  return { HOUR_IDS, cellScore, iconFor, suitFor, termRange, streakInfo, garden, sunTimes, isDark, taiwanDate, dayNumber, addDays, termOn, hash, rng, travelerFor, makePuzzle, shareText, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
 })(typeof RG_DATA !== 'undefined' ? RG_DATA : require('./data.js'),
   typeof SISHI_TERMS !== 'undefined' ? SISHI_TERMS : require('./terms.js'));
 

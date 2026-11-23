@@ -90,13 +90,9 @@
     const svg = $('face');
     const cx = 200, cy = 200, R = 196, r = 70;
     const pt = (deg, rad) => [cx + rad * Math.sin(deg * Math.PI / 180), cy - rad * Math.cos(deg * Math.PI / 180)];
-    let html = `<circle class="ring" cx="${cx}" cy="${cy}" r="${R}"/>`;
-    H.forEach((h, i) => {
-      if (!D.NIGHT.includes(h.id)) return;
-      const a = angleOf(i) - 15, b = angleOf(i) + 15;
-      const [x1, y1] = pt(a, R), [x2, y2] = pt(b, R), [x3, y3] = pt(b, r), [x4, y4] = pt(a, r);
-      html += `<path class="night" d="M${x1},${y1} A${R},${R} 0 0 1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 0 0 ${x4},${y4} Z"/>`;
-    });
+    // 夜晚的範圍依當天的日出日落畫（render 時更新）
+    let html = `<circle class="ring" cx="${cx}" cy="${cy}" r="${R}"/><path class="night" id="night-arc" d=""/>`
+      + '<line class="sunmark" id="mark-rise"/><line class="sunmark" id="mark-set"/>';
     H.forEach((h, i) => {
       const [x1, y1] = pt(angleOf(i) + 15, r), [x2, y2] = pt(angleOf(i) + 15, R);
       html += `<line class="tick" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
@@ -108,7 +104,7 @@
     H.forEach((h, i) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'slot' + (D.NIGHT.includes(h.id) ? ' night' : '');
+      b.className = 'slot';
       b.dataset.i = i;
       const deg = angleOf(i) * Math.PI / 180, rr = 36.5;
       b.style.left = (50 + rr * Math.sin(deg)) + '%';
@@ -118,10 +114,30 @@
     });
   }
 
+  // 時刻（小時）對應圓盤角度：0 點在下方，12 點在上方
+  const angleAt = t => 180 + t * 15;
+  function drawNight(date) {
+    const cx = 200, cy = 200, R = 196, r = 70;
+    const pt = (deg, rad) => [cx + rad * Math.sin(deg * Math.PI / 180), cy - rad * Math.cos(deg * Math.PI / 180)];
+    const { rise, set } = E.sunTimes(date);
+    const a = angleAt(set), b = angleAt(rise + 24); // 從日落順時針到隔天日出
+    const big = b - a > 180 ? 1 : 0;
+    const [x1, y1] = pt(a, R), [x2, y2] = pt(b, R), [x3, y3] = pt(b, r), [x4, y4] = pt(a, r);
+    $('night-arc').setAttribute('d', `M${x1},${y1} A${R},${R} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 ${big} 0 ${x4},${y4} Z`);
+    [['mark-rise', angleAt(rise)], ['mark-set', angleAt(set)]].forEach(([id, deg]) => {
+      const [p1, q1] = pt(deg, r), [p2, q2] = pt(deg, R);
+      const el = $(id);
+      el.setAttribute('x1', p1); el.setAttribute('y1', q1); el.setAttribute('x2', p2); el.setAttribute('y2', q2);
+    });
+    const f = h => `${Math.floor(h)}:${String(Math.round((h - Math.floor(h)) * 60)).padStart(2, '0')}`;
+    $('sun').textContent = `${D.SUN.place} 日出 ${f(rise)}・日落 ${f(set)}（深色是夜晚）`;
+  }
+
   // ---------- 繪製 ----------
   function render() {
     const ev = E.evaluate(puzzle, board);
     const se = D.SEASONS[puzzle.season];
+    drawNight(puzzle.date);
     const [y, m, d] = puzzle.date.split('-').map(Number);
     $('date').textContent = `${m}/${d}`;
     $('tab-daily').setAttribute('aria-pressed', String(mode === 'daily'));
@@ -140,6 +156,7 @@
     document.querySelectorAll('.slot').forEach(b => {
       const i = +b.dataset.i, h = H[i], k = board.slots[i];
       const cell = ev.cells[i];
+      b.classList.toggle('night', E.isDark(puzzle.date, i));
       b.classList.toggle('filled', k !== null);
       b.classList.toggle('target', selected !== null && !done);
       b.classList.toggle('picked', focus === i && !done);
@@ -277,6 +294,7 @@
     if (mode === 'daily' && !store.travelers[puzzle.traveler]) { store.travelers[puzzle.traveler] = puzzle.date; fresh.push(`旅人「${D.TRAVELERS[puzzle.traveler].name}」`); }
     save();
     if (fresh.length) setTimeout(() => toast(`收藏了${fresh.join('、')}`), 400);
+    countPlay();
     $('info').textContent = '亮起來的時辰排得順，暗下來的不太合時。點日晷上的時辰可以看說明。';
     render();
     $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
@@ -302,12 +320,14 @@
     view = v;
     $('game-view').hidden = v !== 'game';
     $('collect-view').hidden = v !== 'collect';
+    $('help-view').hidden = v !== 'help';
     $('mode-note').hidden = v !== 'game';
     $('tab-collect').setAttribute('aria-pressed', String(v === 'collect'));
-    if (v === 'collect') {
+    $('tab-help').setAttribute('aria-pressed', String(v === 'help'));
+    if (v !== 'game') {
       $('tab-daily').setAttribute('aria-pressed', 'false');
       $('tab-practice').setAttribute('aria-pressed', 'false');
-      renderCollect();
+      if (v === 'collect') renderCollect(); else renderHelp();
     } else render();
   }
   const SEASON_ORDER = ['spring', 'summer', 'autumn', 'winter'];
@@ -375,6 +395,43 @@
       : '<p class="muted">還沒遇見這位旅人。每天會有不同的旅人來到驛站。</p>';
   }
 
+  // ---------- 說明 ----------
+  function renderHelp() {
+    const P = D.POINTS, rk = D.RANKS;
+    const rest = H.map(h => `${h.id} ${D.REST[h.id]}`).join('、');
+    const seasons = ['spring', 'summer', 'autumn', 'winter'].map(k => { const se = D.SEASONS[k]; return `<li><b>${se.name}・${se.rule}</b>：${se.note}</li>`; }).join('');
+    const hours = H.map(h => `<tr><th scope="row">${h.id}</th><td>${h.time}</td><td>${h.organ}</td><td>${h.title}</td></tr>`).join('');
+    $('help-view').innerHTML = `
+      <section class="box"><h2>怎麼玩</h2><ol class="steps">
+        <li>每天有一位旅人來到驛站，帶著幾件要做的事。</li>
+        <li>先點下方的一張行程，再點日晷上的一個時辰，就排進去了。點已經排好的時辰，可以把行程收回來。</li>
+        <li>沒排行程的時辰算是休息。全部行程都排好後，按「定案」看結果。</li>
+        <li>「今日一題」所有人同一題，一天只記第一次定案的成績；「練習」隨機出題，不計入紀錄。</li></ol></section>
+      <section class="box"><h2>計分</h2><ul class="rules">
+        <li>放在適合的時辰 ${P.good} 分，值班的官會亮起來；中性 ${P.neutral} 分；不適合 ${P.bad} 分，會暗下來。</li>
+        <li>空著休息依時辰給分：${rest}。「安睡」至少跟休息一樣分數。</li>
+        <li>夜裡休息拿滿分是月亮 ${D.ICONS.moon}，白天排得好是太陽 ${D.ICONS[3]}。</li>
+        <li>旅人的心願沒有達成，評等最高只到「${rk[1].name}」。</li>
+        <li>評等：${rk.slice(0, -1).map(r => `${r.min} 分以上「${r.name}」`).join('、')}，其餘「${rk[rk.length - 1].name}」。滿分 36。</li></ul>
+        <h3>四季作息</h3><ul class="rules">${seasons}</ul></section>
+      <section class="box"><h2>十二時辰與值班的官</h2>
+        <div class="table-wrap"><table class="hours"><thead><tr><th>時辰</th><th>時間</th><th>當值</th><th>官名</th></tr></thead><tbody>${hours}</tbody></table></div></section>
+      <section class="box"><h2>出處</h2><ul class="sources">
+        ${D.SOURCES.map(s => `<li><a href="${encodeURI(s.url)}" target="_blank" rel="noopener">${s.title}</a><span>${s.use}</span></li>`).join('')}</ul>
+        <ul class="notes">${D.NOTES.map(n => `<li>${n}</li>`).join('')}</ul>
+        <p class="hint">${D.TEXT.disclaimer}</p></section>`;
+  }
+
+  // ---------- 使用次數（GoatCounter 公開計數，只取得總數） ----------
+  function countPlay() {
+    try { const gc = window.goatcounter; if (gc && gc.count) gc.count({ path: 'rigui-play', title: '日晷定案', event: true, no_session: true }); } catch (e) { /* 略過 */ }
+  }
+  try {
+    fetch('https://imqingstone.goatcounter.com/counter/rigui-play.json').then(r => (r.ok ? r.json() : null))
+      .then(d => { const el = $('usage'); if (el && d && d.count) { el.textContent = `已有 ${d.count} 位旅人排過一天`; el.hidden = false; } })
+      .catch(() => {});
+  } catch (e) { /* 略過 */ }
+
   // ---------- 進度備份 ----------
   function exportSave() {
     const pad = n => String(n).padStart(2, '0');
@@ -414,6 +471,7 @@
   $('btn-skip').addEventListener('click', nextPractice);
   $('btn-copy').addEventListener('click', onCopy);
   $('tab-collect').addEventListener('click', () => setView('collect'));
+  $('tab-help').addEventListener('click', () => setView('help'));
   $('term-grid').addEventListener('click', ev => { const b = ev.target.closest('[data-term]'); if (b) showTerm(b.dataset.term); });
   $('trav-grid').addEventListener('click', ev => { const b = ev.target.closest('[data-trav]'); if (b) showTraveler(b.dataset.trav); });
   $('btn-export').addEventListener('click', exportSave);

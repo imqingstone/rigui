@@ -141,4 +141,27 @@ footer p{margin:0 0 6px}
 .hou span{display:inline-block;width:3em;font-size:12px;color:var(--gold);font-family:inherit}
 .confirm{margin-top:8px;padding:10px;border:1px solid var(--gold);border-radius:10px;background:#fff3d6;text-align:center;font-size:14px}
 .confirm p{margin:0}
-.modes button{min-width:92px}
+.modes button{min-width:0;padding:6px 14px;font-size:14px;letter-spacing:.12em}
+.face .sunmark{stroke:var(--sun);stroke-width:2;stroke-dasharray:4 3}
+.sun{text-align:center;margin:2px 0 0;font-size:12px;color:var(--mute);letter-spacing:1px}
+
+/* 說明 */
+.help{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.help h3{font-family:var(--serif);font-size:15px;color:var(--stone);margin:12px 0 4px;letter-spacing:.15em}
+.steps,.rules,.sources,.notes{margin:0;padding-left:1.3em;font-size:14px;line-height:1.8}
+.steps li,.rules li,.notes li{margin-bottom:4px}
+.sources{list-style:none;padding:0}
+.sources li{display:flex;flex-direction:column;padding:6px 0;border-bottom:1px dashed var(--line)}
+.sources a{color:var(--stone);font-family:var(--serif)}
+.sources span{font-size:12px;color:var(--mute)}
+.notes{margin-top:10px;color:var(--mute);font-size:13px}
+.table-wrap{overflow-x:auto}
+.hours{width:100%;border-collapse:collapse;font-size:14px}
+.hours th,.hours td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}
+.hours thead th{color:var(--mute);font-weight:400;font-size:12px}
+.hours tbody th{font-family:var(--serif);color:var(--stone)}
+/* 頁尾：使用人數與回到青石驛（比照青石驛各站） */
+.usage{display:block;margin-top:6px;font-size:12px;letter-spacing:1px}
+.home-link{display:flex;align-items:center;gap:10px;width:fit-content;margin:14px auto 6px;padding:6px 18px 6px 6px;border:1px solid currentColor;border-radius:999px;font-size:14px;letter-spacing:2px;line-height:1.4;color:inherit;text-decoration:none;background:rgba(255,255,255,.45);box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s}
+.home-link img{width:28px;height:28px;border-radius:8px;flex:none;display:block}
+.home-link:hover{transform:translateY(-1px)}
