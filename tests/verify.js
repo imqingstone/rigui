@@ -438,6 +438,14 @@ test('頁面：回到青石驛、使用次數、GoatCounter 都在', () => {
   assert.ok(app.includes("path: 'rigui-play'") && app.includes('counter/rigui-play.json'));
 });
 
+test('畫面提示：行程要全部排進去；心願沒達成時日晷中央會提示', () => {
+  assert.strictEqual(D.TEXT.trayHint, '行程要全部排進去；沒排的時辰就是休息。');
+  assert.strictEqual(D.TEXT.needMissed, '心願未達成');
+  const html = fs.readFileSync(path.join(__dirname, '../docs/index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '../docs/app.js'), 'utf8');
+  assert.ok(html.includes('id="tray-hint"') && app.includes('D.TEXT.trayHint') && app.includes('D.TEXT.needMissed'));
+});
+
 // ---------- 文字 ----------
 const textFiles = () => {
   const dir = path.join(__dirname, '../docs');

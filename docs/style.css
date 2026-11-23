@@ -183,3 +183,5 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradi
 .mode-note,.sun{text-shadow:0 0 6px var(--paper),0 0 12px var(--paper)}
 .top{background:rgba(246,232,207,.6);border-radius:0 0 14px 14px;padding-left:10px;padding-right:10px}
 footer{background:rgba(246,232,207,.82);border-radius:16px;border-top:0}
+.tray-hint{margin:-4px 0 8px;font-size:13px;color:var(--mute)}
+.center-text .miss{display:block;margin-top:2px;font-size:clamp(11px,3vw,12px);color:var(--bad);font-family:inherit}

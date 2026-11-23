@@ -184,7 +184,7 @@
     $('btn-done').textContent = ev.allPlaced ? '定案' : `還有 ${left.length} 張`;
 
     const ct = $('center-text');
-    if (done) ct.innerHTML = `<b>${ev.total}</b>${ev.rank}`;
+    if (done) ct.innerHTML = `<b>${ev.total}</b>${ev.rank}` + (ev.need && !ev.need.ok ? `<small class="miss">${D.TEXT.needMissed}</small>` : '');
     else if (selected !== null) ct.innerHTML = `把「${cardName(selected)}」<br>放到哪個時辰？`;
     else ct.innerHTML = `已排 ${puzzle.cards.length - left.length}／${puzzle.cards.length}`;
     $('gnomon').style.setProperty('--deg', (focus === null ? 0 : angleOf(focus) + 180) + 'deg');
@@ -461,6 +461,7 @@
   }
 
   buildFace();
+  $('tray-hint').textContent = D.TEXT.trayHint;
   readStore();
   open('daily');
   $('tab-daily').addEventListener('click', () => { if (view !== 'game') { view = 'game'; setView('game'); } if (mode !== 'daily') { open('daily'); $('info').textContent = '今天的題目。先點一張行程，再點日晷上的時辰。'; render(); } });
