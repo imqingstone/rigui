@@ -15,4 +15,5 @@
 
 ## 目前進度
 
-- 里程碑 1 完成，等 Selene 試玩確認（細節見規格第 0 節）。下一步是里程碑 2。
+- 里程碑 1 已上線。里程碑 2 完成，等 Selene 試玩確認（細節見規格第 0 節）。下一步是里程碑 3。
+- GitHub Pages 尚未在 rigui 專案開啟，需要 Selene 到 Settings → Pages 設定 main 分支的 /docs。

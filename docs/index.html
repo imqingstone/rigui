@@ -8,6 +8,11 @@
 </header>
 
 <main id="main" tabindex="-1">
+  <nav class="modes" aria-label="模式">
+    <button id="tab-daily" type="button" aria-pressed="true">今日一題</button>
+    <button id="tab-practice" type="button" aria-pressed="false">練習</button>
+  </nav>
+  <p class="mode-note" id="mode-note"></p>
   <section class="traveler" id="traveler" aria-live="polite"></section>
 
   <section class="dial-wrap" aria-label="日晷：十二時辰">
@@ -33,9 +38,15 @@
     <h2 id="r-rank"></h2>
     <p class="score"><b id="r-total"></b><span> / </span><span id="r-max"></span></p>
     <p class="need" id="r-need"></p>
+    <p class="record" id="r-record" hidden></p>
+    <div class="share" id="r-share">
+      <label for="share-text">分享結果（不會透露排法）</label>
+      <textarea id="share-text" rows="5" readonly></textarea>
+      <button id="btn-copy" class="primary" type="button">複製結果</button>
+    </div>
     <ol class="cells" id="r-cells"></ol>
     <p class="source" id="r-source"></p>
-    <div class="actions"><button id="btn-again" class="primary" type="button">再排一次</button></div>
+    <div class="actions"><button id="btn-again" class="ghost" type="button">再排一次</button><button id="btn-next" class="primary" type="button" hidden>換一題</button></div>
   </section>
 </main>
 
@@ -47,6 +58,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="data.js"></script>
+<script src="terms.js"></script>
 <script src="engine.js"></script>
 <script src="app.js"></script>
 </body></html>

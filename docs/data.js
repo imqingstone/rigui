@@ -81,7 +81,25 @@ const RG_DATA = {
   // 分享與結果用的符號：分數 → 符號
   ICONS: { 3: '☀', 2: '🌤', 1: '☁', 0: '🌧', moon: '🌙' }, // 夜裡休息拿滿分用月亮
 
-  // 里程碑 1：固定一題
+  // 節氣所屬的季節（terms.js 的節氣名稱）
+  TERM_SEASON: {
+    立春: 'spring', 雨水: 'spring', 驚蟄: 'spring', 春分: 'spring', 清明: 'spring', 穀雨: 'spring',
+    立夏: 'summer', 小滿: 'summer', 芒種: 'summer', 夏至: 'summer', 小暑: 'summer', 大暑: 'summer',
+    立秋: 'autumn', 處暑: 'autumn', 白露: 'autumn', 秋分: 'autumn', 寒露: 'autumn', 霜降: 'autumn',
+    立冬: 'winter', 小雪: 'winter', 大雪: 'winter', 冬至: 'winter', 小寒: 'winter', 大寒: 'winter'
+  },
+
+  // 每日題目
+  DAILY: {
+    travelers: ['scholar', 'merchant', 'farmer', 'painter', 'elder', 'wanderer'], // 每六天輪一遍，順序依亂數打散
+    needCards: { scholar: ['study', 'study'], merchant: ['travel', 'travel'], farmer: ['farm'], painter: ['paint'], elder: ['bedtime'], wanderer: [] },
+    pool: ['sleep', 'walk', 'breakfast', 'study', 'work', 'lunch', 'nap', 'tea', 'dinner', 'bath', 'sit', 'bedtime'],
+    size: [6, 8],      // 每題的行程張數
+    tries: 80          // 出題時最多試幾次，找到能拿最高評等的組合
+  },
+  SITE: 'imqingstone.github.io/rigui/',
+
+  // 里程碑 1：固定一題（保留給測試）
   FIXED: { date: '2026-11-07', term: '立冬', season: 'winter', traveler: 'scholar',
     cards: ['breakfast', 'study', 'study', 'lunch', 'tea', 'dinner', 'bath'] },
 

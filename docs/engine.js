@@ -1,5 +1,5 @@
 // 日晷規則引擎：純函式，不碰畫面與瀏覽器儲存。可以在 Node 中執行。
-const RG_ENGINE = (function (D) {
+const RG_ENGINE = (function (D, TERMS) {
   const HOUR_IDS = D.HOURS.map(h => h.id);
   const N = HOUR_IDS.length;
 
@@ -138,7 +138,100 @@ const RG_ENGINE = (function (D) {
     return r ? { best: r.v, slots: r.pick } : null;
   }
 
-  return { HOUR_IDS, cellScore, iconFor, suitFor, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
-})(typeof RG_DATA !== 'undefined' ? RG_DATA : require('./data.js'));
+  // ---------- 日期與節氣（台灣時間，UTC+8） ----------
+  const pad = n => String(n).padStart(2, '0');
+  function taiwanDate(ms) {
+    const d = new Date(ms + 8 * 3600 * 1000);
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  }
+  const parts = date => date.split('-').map(Number);
+  function dayNumber(date) { const [y, m, d] = parts(date); return Math.floor(Date.UTC(y, m - 1, d) / 86400000); }
+  function addDays(date, n) {
+    const [y, m, d] = parts(date);
+    const t = new Date(Date.UTC(y, m - 1, d) + n * 86400000);
+    return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
+  }
+  // 這一天（以當天結束前為準）所在的節氣；terms.js 的時刻是 1970-01-01 00:00（UTC+8）起算的分鐘數
+  function termOn(date) {
+    const [y, m, d] = parts(date);
+    const mins = Date.UTC(y, m - 1, d, 23, 59) / 60000;
+    let best = null;
+    [y - 1, y].forEach(yy => {
+      const row = TERMS.data[yy - TERMS.start];
+      if (!row) return;
+      row.forEach((t, i) => { if (t <= mins && (!best || t > best.t)) best = { t, i }; });
+    });
+    if (!best) throw new Error('超出節氣資料的年份：' + date);
+    const name = TERMS.names[best.i];
+    return { name, season: D.TERM_SEASON[name], start: taiwanDate((best.t - 8 * 60) * 60000) };
+  }
+
+  // ---------- 亂數 ----------
+  function hash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = Math.imul(a ^ (a >>> 15), a | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(arr, r) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+
+  // ---------- 旅人輪替：每六天輪一遍，順序打散，而且不連續兩天同一位 ----------
+  function travelerFor(date) {
+    const T = D.DAILY.travelers, n = T.length;
+    const day = dayNumber(date), block = Math.floor(day / n), pos = day - block * n;
+    const order = b => shuffle(T, rng(hash('rigui:travelers:' + b)));
+    let perm = order(block);
+    if (perm[0] === order(block - 1)[n - 1]) perm = [perm[1], perm[0]].concat(perm.slice(2));
+    return perm[pos];
+  }
+
+  // ---------- 出題 ----------
+  // 依種子挑出行程（含旅人需要的卡），只收「需求達成時能拿到最高評等」的組合
+  function makePuzzle(date, opts) {
+    const o = opts || {};
+    const term = termOn(date);
+    const traveler = o.traveler || travelerFor(date);
+    const r = rng(hash(o.seed || ('rigui:' + date)));
+    const [lo, hi] = D.DAILY.size;
+    const base = D.DAILY.needCards[traveler];
+    for (let k = 0; k < D.DAILY.tries; k++) {
+      const n = lo + Math.floor(r() * (hi - lo + 1));
+      const pool = shuffle(D.DAILY.pool.filter(id => !base.includes(id)), r);
+      const cards = shuffle(base.concat(pool.slice(0, n - base.length)), r);
+      const p = { date, term: term.name, season: term.season, traveler, cards, practice: !!o.seed };
+      const s = solve(p);
+      if (s && s.best >= D.RANKS[0].min) return Object.assign(p, { best: s.best });
+    }
+    throw new Error('找不到能拿最高評等的題目：' + date);
+  }
+
+  // ---------- 分享文字 ----------
+  function shareText(puzzle, ev) {
+    const [, m, d] = parts(puzzle.date);
+    const icons = ev.cells.map(c => iconFor(puzzle, c));
+    return [
+      `日晷・${m}/${d} ${puzzle.term}${puzzle.practice ? '（練習）' : ''}`,
+      icons.slice(0, 6).join(''),
+      icons.slice(6).join(''),
+      `${ev.total}/${ev.max} ${ev.rank}`,
+      D.SITE
+    ].join('\n');
+  }
+
+  return { HOUR_IDS, cellScore, iconFor, suitFor, taiwanDate, dayNumber, addDays, termOn, hash, rng, travelerFor, makePuzzle, shareText, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
+})(typeof RG_DATA !== 'undefined' ? RG_DATA : require('./data.js'),
+  typeof SISHI_TERMS !== 'undefined' ? SISHI_TERMS : require('./terms.js'));
 
 if (typeof module !== 'undefined') module.exports = RG_ENGINE;

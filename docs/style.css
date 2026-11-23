@@ -91,3 +91,15 @@ footer p{margin:0 0 6px}
 .copyright{display:block;margin-top:6px;font-size:12px;letter-spacing:1px}
 
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* 模式 */
+.modes{display:flex;gap:0;margin:12px auto 0;width:fit-content;border:1px solid var(--stone);border-radius:999px;overflow:hidden}
+.modes button{min-height:40px;min-width:110px;padding:6px 16px;border:0;background:transparent;color:var(--stone);letter-spacing:.2em;font-size:15px}
+.modes button[aria-pressed="true"]{background:var(--stone);color:var(--paper2)}
+.mode-note{text-align:center;margin:6px 0 0;font-size:13px;color:var(--mute);line-height:1.6}
+/* 分享與紀錄 */
+.record{text-align:center;font-size:13px;color:var(--gold);margin:0 0 10px}
+.share{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:6px 0 12px;padding:10px;border:1px dashed var(--line);border-radius:12px;background:#fffaf0}
+.share label{font-size:13px;color:var(--mute)}
+.share textarea{width:100%;resize:none;border:1px solid var(--line);border-radius:8px;background:var(--paper2);color:var(--ink);font-size:15px;line-height:1.6;font-family:inherit;padding:8px 10px}
+.share .primary{align-self:center}

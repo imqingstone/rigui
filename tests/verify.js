@@ -245,6 +245,102 @@ test('里程碑 1 的固定題目（書生、立冬）能拿到滿分與最高�
   assert.ok(!empty.allPlaced && empty.total < 30);
 });
 
+// ---------- 每日題目 ----------
+test('日期：依台灣時間（UTC+8）換日', () => {
+  assert.strictEqual(E.taiwanDate(Date.UTC(2026, 10, 22, 15, 59)), '2026-11-22');
+  assert.strictEqual(E.taiwanDate(Date.UTC(2026, 10, 22, 16, 0)), '2026-11-23');
+  assert.strictEqual(E.addDays('2026-12-31', 1), '2027-01-01');
+  assert.strictEqual(E.dayNumber('2026-11-24') - E.dayNumber('2026-11-23'), 1);
+});
+
+test('節氣：依當天判斷，節氣當天就算新節氣；季節對應正確', () => {
+  const t = d => E.termOn(d);
+  assert.strictEqual(t('2026-11-06').name, '霜降');
+  assert.strictEqual(t('2026-11-07').name, '立冬');
+  assert.strictEqual(t('2026-11-23').name, '小雪');
+  assert.strictEqual(t('2026-02-04').name, '立春');
+  assert.strictEqual(t('2027-01-05').name, '小寒');
+  assert.strictEqual(t('2026-11-07').season, 'winter');
+  assert.strictEqual(t('2026-02-04').season, 'spring');
+  assert.strictEqual(t('2026-11-23').start, '2026-11-22');
+  Object.values(D.TERM_SEASON).forEach(s => assert.ok(D.SEASONS[s]));
+  assert.strictEqual(Object.keys(D.TERM_SEASON).length, 24);
+});
+
+test('旅人：同一天固定；每六天每位都出現；不連續兩天同一位', () => {
+  assert.strictEqual(E.travelerFor('2026-11-23'), E.travelerFor('2026-11-23'));
+  let d = '2026-01-01', prev = null;
+  for (let i = 0; i < 800; i++) {
+    const t = E.travelerFor(d);
+    assert.ok(D.TRAVELERS[t]);
+    assert.notStrictEqual(t, prev, d + ' 與前一天同一位旅人');
+    prev = t; d = E.addDays(d, 1);
+  }
+  // 每個六天區塊（依日數對齊）裡六位都出現
+  const start = E.dayNumber('2026-11-23');
+  const block0 = Math.floor(start / 6) * 6;
+  const seen = new Set();
+  for (let k = 0; k < 6; k++) seen.add(E.travelerFor(E.addDays('2026-11-23', block0 + k - start)));
+  assert.strictEqual(seen.size, 6);
+});
+
+function checkPuzzle(p, label) {
+  const need = D.DAILY.needCards[p.traveler];
+  assert.ok(p.cards.length >= D.DAILY.size[0] && p.cards.length <= D.DAILY.size[1], label + ' 張數');
+  need.forEach(c => assert.ok(p.cards.filter(x => x === c).length >= need.filter(x => x === c).length, label + ' 缺少需求卡 ' + c));
+  p.cards.forEach(c => { const only = D.CARDS[c].only; assert.ok(!only || only === p.traveler, label + ' 出現別人的專屬卡 ' + c); });
+  const extra = p.cards.slice(); need.forEach(c => extra.splice(extra.indexOf(c), 1));
+  assert.strictEqual(new Set(extra).size, extra.length, label + ' 一般行程重複');
+  const s = E.solve(p);
+  assert.ok(s && s.best >= D.RANKS[0].min, label + ' 拿不到最高評等');
+  const ev = E.evaluate(p, { slots: s.slots });
+  assert.strictEqual(ev.rank, D.RANKS[0].name, label);
+  assert.ok(ev.allPlaced && (!ev.need || ev.need.ok), label);
+}
+
+test('每日題目：同一天同一題、不同天不同題', () => {
+  assert.deepStrictEqual(E.makePuzzle('2026-11-23'), E.makePuzzle('2026-11-23'));
+  assert.notDeepStrictEqual(E.makePuzzle('2026-11-23').cards, E.makePuzzle('2026-11-24').cards);
+  const p = E.makePuzzle('2026-11-23');
+  assert.strictEqual(p.term, '小雪'); assert.strictEqual(p.season, 'winter'); assert.strictEqual(p.practice, false);
+});
+
+test('每日題目：從今天起未來一年的每一天，都有能拿最高評等的排法', () => {
+  let d = E.taiwanDate(Date.now());
+  for (let i = 0; i <= 366; i++) { checkPuzzle(E.makePuzzle(d), d); d = E.addDays(d, 1); }
+});
+
+test('每日題目：四季與所有旅人在一年內都會出現', () => {
+  const seasons = new Set(), travelers = new Set();
+  let d = '2027-01-01';
+  for (let i = 0; i < 365; i++) { const p = E.makePuzzle(d); seasons.add(p.season); travelers.add(p.traveler); d = E.addDays(d, 1); }
+  assert.strictEqual(seasons.size, 4); assert.strictEqual(travelers.size, 6);
+});
+
+test('練習：依種子出題，可以指定旅人，也保證有解', () => {
+  for (let k = 0; k < 60; k++) {
+    const t = D.DAILY.travelers[k % 6];
+    const p = E.makePuzzle('2026-06-21', { seed: 'practice:' + k, traveler: t });
+    assert.strictEqual(p.traveler, t); assert.strictEqual(p.practice, true);
+    checkPuzzle(p, 'practice ' + k);
+  }
+  assert.deepStrictEqual(E.makePuzzle('2026-06-21', { seed: 'x' }), E.makePuzzle('2026-06-21', { seed: 'x' }));
+});
+
+test('分享文字：日期與節氣、兩行各六個符號、分數與評等、網址，不透露排法', () => {
+  const p = E.makePuzzle('2026-11-23');
+  const ev = E.evaluate(p, { slots: E.solve(p).slots });
+  const lines = E.shareText(p, ev).split('\n');
+  assert.strictEqual(lines.length, 5);
+  assert.strictEqual(lines[0], '日晷・11/23 小雪');
+  const icons = Object.values(D.ICONS);
+  [lines[1], lines[2]].forEach(l => assert.strictEqual(Array.from(l).filter(ch => icons.includes(ch)).length, 6, l));
+  assert.strictEqual(lines[3], `${ev.total}/36 ${ev.rank}`);
+  assert.strictEqual(lines[4], D.SITE);
+  p.cards.forEach(c => assert.ok(!E.shareText(p, ev).includes(D.CARDS[c].name), '分享文字透露了行程'));
+  assert.ok(E.shareText(E.makePuzzle('2026-11-23', { seed: 's' }), ev).includes('（練習）'));
+});
+
 // ---------- 文字 ----------
 const textFiles = () => {
   const dir = path.join(__dirname, '../docs');
