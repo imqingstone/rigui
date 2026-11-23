@@ -418,8 +418,7 @@
         <div class="table-wrap"><table class="hours"><thead><tr><th>時辰</th><th>時間</th><th>當值</th><th>官名</th></tr></thead><tbody>${hours}</tbody></table></div></section>
       <section class="box"><h2>出處</h2><ul class="sources">
         ${D.SOURCES.map(s => `<li><a href="${encodeURI(s.url)}" target="_blank" rel="noopener">${s.title}</a><span>${s.use}</span></li>`).join('')}</ul>
-        <ul class="notes">${D.NOTES.map(n => `<li>${n}</li>`).join('')}</ul>
-        <p class="hint">${D.TEXT.disclaimer}</p></section>`;
+        <ul class="notes">${D.NOTES.map(n => `<li>${n}</li>`).join('')}</ul></section>`;
   }
 
   // ---------- 使用次數（GoatCounter 公開計數，只取得總數） ----------
