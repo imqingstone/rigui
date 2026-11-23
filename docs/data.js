@@ -55,7 +55,7 @@ const RG_DATA = {
     dinner: { name: '晚膳', desc: '一碗麵、一盤炒青菜。', good: ['酉'], bad: ['子', '丑'] },
     bath: { name: '泡腳沐浴', desc: '燒一盆熱水，洗去一天的風塵。', good: ['酉', '戌'], bad: ['午'] },
     sit: { name: '靜坐', desc: '找個安靜的角落，閉目調息。', good: ['卯', '戌', '亥'], bad: [] },
-    bedtime: { name: '收拾就寢', desc: '整理好明天的行囊，熄燈上床。', good: ['亥'], bad: ['卯', '辰'] },
+    bedtime: { name: '收拾就寢', desc: '整理好明天的行囊，熄燈上床。', good: ['亥'], bad: ['卯', '辰', '巳', '午', '未', '申', '酉'] },
     travel: { name: '趕路', desc: '背起行囊，往下一個驛站走。', good: ['辰', '巳', '未', '申'], bad: ['子', '丑', '亥'], only: 'merchant' },
     farm: { name: '下田', desc: '趁著天涼下田幹活。', good: ['卯', '辰'], bad: ['子', '丑'], only: 'farmer' },
     paint: { name: '作畫', desc: '鋪紙研墨，畫一幅山水。', good: ['巳', '申'], bad: ['子', '丑'], only: 'painter' }

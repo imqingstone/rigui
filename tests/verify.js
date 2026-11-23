@@ -140,6 +140,14 @@ test('圖示：夜裡放「安睡」拿滿分也是月亮', () => {
   ['子', '丑', '寅', '卯', '亥'].forEach(h => assert.strictEqual(E.iconFor(w, cell(h)), D.ICONS.moon, h));
 });
 
+test('收拾就寢：白天（巳到酉）與清晨（卯、辰）都算不合時，亥時適合', () => {
+  ['spring', 'summer', 'autumn', 'winter'].forEach(se => {
+    const p = P({ season: se });
+    ['卯', '辰', '巳', '午', '未', '申', '酉'].forEach(h => assert.strictEqual(E.cellScore(p, at(h), 'bedtime').points, 0, se + ' ' + h));
+    assert.strictEqual(E.cellScore(p, at('亥'), 'bedtime').points, 3, se);
+  });
+});
+
 // ---------- 旅人的需求 ----------
 test('需求：書生白天讀書至少兩個時辰', () => {
   const p = P({ traveler: 'scholar', cards: ['study', 'study'] });

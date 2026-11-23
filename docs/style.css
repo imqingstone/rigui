@@ -62,7 +62,7 @@ main{max-width:460px;margin:0 auto;outline:none}
 .tray .empty{font-size:13px;color:var(--mute);align-self:center}
 .card{min-height:44px;padding:6px 14px;border-radius:12px;border:1px solid var(--line);background:#fffaf0;font-family:var(--serif);font-size:15px;color:var(--ink);box-shadow:0 1px 3px rgba(78,94,95,.08)}
 .card.sel{border-color:var(--gold);background:#fff3d6;box-shadow:0 0 0 2px var(--gold)}
-.actions{display:flex;gap:10px;justify-content:center;margin:14px 0 6px}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0 6px}
 
 /* 結果 */
 .result{margin-top:8px;padding:14px 12px;border:1px solid var(--line);border-radius:16px;background:var(--paper2)}

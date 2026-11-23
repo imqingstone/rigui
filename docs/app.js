@@ -162,6 +162,7 @@
       b.addEventListener('click', () => onCard(k));
       tray.appendChild(b);
     });
+    $('btn-skip').hidden = mode !== 'practice';
     $('btn-done').disabled = !ev.allPlaced;
     $('btn-done').textContent = ev.allPlaced ? '定案' : `還有 ${left.length} 張`;
 
@@ -270,9 +271,10 @@
     if (mode === 'daily' && !store.history[today]) {
       store.history[today] = { total: ev.total, rank: ev.rank, needOk: ev.need ? ev.need.ok : true, share: E.shareText(puzzle, ev) };
     }
+    // 只有今日一題會收藏；練習不計入紀錄
     const fresh = [];
-    if (!store.terms[puzzle.term]) { store.terms[puzzle.term] = puzzle.date; fresh.push(`節氣「${puzzle.term}」`); }
-    if (!store.travelers[puzzle.traveler]) { store.travelers[puzzle.traveler] = puzzle.date; fresh.push(`旅人「${D.TRAVELERS[puzzle.traveler].name}」`); }
+    if (mode === 'daily' && !store.terms[puzzle.term]) { store.terms[puzzle.term] = puzzle.date; fresh.push(`節氣「${puzzle.term}」`); }
+    if (mode === 'daily' && !store.travelers[puzzle.traveler]) { store.travelers[puzzle.traveler] = puzzle.date; fresh.push(`旅人「${D.TRAVELERS[puzzle.traveler].name}」`); }
     save();
     if (fresh.length) setTimeout(() => toast(`收藏了${fresh.join('、')}`), 400);
     $('info').textContent = '亮起來的時辰排得順，暗下來的不太合時。點日晷上的時辰可以看說明。';
@@ -407,7 +409,9 @@
   open('daily');
   $('tab-daily').addEventListener('click', () => { if (view !== 'game') { view = 'game'; setView('game'); } if (mode !== 'daily') { open('daily'); $('info').textContent = '今天的題目。先點一張行程，再點日晷上的時辰。'; render(); } });
   $('tab-practice').addEventListener('click', () => { if (view !== 'game') { view = 'game'; setView('game'); } if (mode !== 'practice') { open('practice'); $('info').textContent = '練習題，不計入紀錄。先點一張行程，再點日晷上的時辰。'; render(); } });
-  $('btn-next').addEventListener('click', () => { open('practice', true); $('info').textContent = '換了一題新的練習。'; render(); window.scrollTo(0, 0); });
+  const nextPractice = () => { open('practice', true); $('info').textContent = '換了一題新的練習。'; render(); window.scrollTo(0, 0); };
+  $('btn-next').addEventListener('click', nextPractice);
+  $('btn-skip').addEventListener('click', nextPractice);
   $('btn-copy').addEventListener('click', onCopy);
   $('tab-collect').addEventListener('click', () => setView('collect'));
   $('term-grid').addEventListener('click', ev => { const b = ev.target.closest('[data-term]'); if (b) showTerm(b.dataset.term); });
