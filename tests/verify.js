@@ -114,6 +114,32 @@ test('說明：卯時與亥時依季節改寫，冬天卯時寫「必待日光�
   });
 });
 
+test('安睡：任何季節、任何時辰，放「安睡」的分數都不比空著休息低', () => {
+  ['spring', 'summer', 'autumn', 'winter'].forEach(se => {
+    const p = P({ season: se });
+    IDS.forEach((h, i) => {
+      const sleep = E.cellScore(p, i, 'sleep').points, rest = E.cellScore(p, i, null).points;
+      assert.ok(sleep >= rest, `${se} ${h}：安睡 ${sleep} 分，休息 ${rest} 分`);
+    });
+  });
+});
+
+test('安睡：寅時、冬天卯時、秋冬亥時都算適合（3 分）', () => {
+  assert.strictEqual(E.cellScore(P({ season: 'spring' }), at('寅'), 'sleep').points, 3);
+  assert.strictEqual(E.cellScore(P({ season: 'winter' }), at('卯'), 'sleep').points, 3);
+  ['autumn', 'winter'].forEach(se => {
+    const c = E.cellScore(P({ season: se }), at('亥'), 'sleep');
+    assert.strictEqual(c.points, 3, se); assert.strictEqual(c.kind, 'good', se);
+  });
+  assert.ok(E.cellScore(P({ season: 'spring' }), at('卯'), 'sleep').points < 3, '春天卯時該起身');
+});
+
+test('圖示：夜裡放「安睡」拿滿分也是月亮', () => {
+  const w = P({ season: 'winter' });
+  const cell = (h) => Object.assign({ hour: h, cardId: 'sleep' }, E.cellScore(w, at(h), 'sleep'));
+  ['子', '丑', '寅', '卯', '亥'].forEach(h => assert.strictEqual(E.iconFor(w, cell(h)), D.ICONS.moon, h));
+});
+
 // ---------- 旅人的需求 ----------
 test('需求：書生白天讀書至少兩個時辰', () => {
   const p = P({ traveler: 'scholar', cards: ['study', 'study'] });

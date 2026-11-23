@@ -18,6 +18,13 @@ const RG_ENGINE = (function (D) {
     if (se.awakeOk.includes(h) && kind === 'bad') { kind = 'neutral'; mod = 'awakeOk'; }
     if (se.mustSleep.includes(h) && kind !== 'good') { kind = 'bad'; mod = 'mustSleep'; }
     if (se.sleepIn.includes(h) && kind === 'good') { kind = 'neutral'; mod = 'sleepIn'; }
+    // 睡覺類的行程：分數不低於空著休息
+    if (c.asRest) {
+      const rest = cellScore(puzzle, i, null);
+      if (rest.points > D.POINTS[kind]) {
+        return { points: rest.points, kind: rest.points >= D.POINTS.good ? 'good' : 'neutral', mod: rest.mod };
+      }
+    }
     return { points: D.POINTS[kind], kind, mod };
   }
 
@@ -47,7 +54,8 @@ const RG_ENGINE = (function (D) {
   function iconFor(puzzle, cell) {
     const se = D.SEASONS[puzzle.season];
     const dark = D.NIGHT.includes(cell.hour) || se.sleepIn.includes(cell.hour);
-    if (!cell.cardId && cell.points === D.POINTS.good && dark) return D.ICONS.moon;
+    const sleeping = !cell.cardId || D.CARDS[cell.cardId].asRest;
+    if (sleeping && cell.points === D.POINTS.good && dark) return D.ICONS.moon;
     return D.ICONS[cell.points];
   }
   // 時辰的說明，依季節改寫
