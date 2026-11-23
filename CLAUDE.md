@@ -15,4 +15,4 @@
 
 ## 目前進度
 
-- 里程碑 1–3 已上線（GitHub Pages：main 的 /docs）。里程碑 4 做到插畫以外的部分，等 Selene 依 `design/ART.md` 畫好插畫（細節見規格第 0 節）。
+- 里程碑 1–3 已上線（GitHub Pages：main 的 /docs）。里程碑 4 完成（含插畫），等 Selene 試玩確認後上線，再到青石驛的驛站後院加上日晷（細節見規格第 0 節）。

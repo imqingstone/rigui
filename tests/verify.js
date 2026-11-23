@@ -419,6 +419,15 @@ test('原文：引用的句子與維基文庫核對過的版本一致', () => {
   assert.strictEqual(D.TERM_INFO.小滿.hou[2], '小暑至');
 });
 
+test('頁面：插畫、圖示與分享縮圖都在', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../docs/index.html'), 'utf8');
+  ['img/hero-tall.jpg', 'img/hero-wide.jpg', 'img/og.jpg', 'apple-touch-icon.png', 'icon-192.png'].forEach(f => {
+    const st = fs.statSync(path.join(__dirname, '../docs/' + f));
+    assert.ok(st.size > 1000 && st.size < 400 * 1024, f + ' 大小 ' + st.size);
+  });
+  assert.ok(html.includes('og:image') && html.includes('apple-touch-icon'));
+});
+
 test('頁面：回到青石驛、使用次數、GoatCounter 都在', () => {
   const html = fs.readFileSync(path.join(__dirname, '../docs/index.html'), 'utf8');
   assert.ok(html.includes('href="https://imqingstone.github.io/"') && html.includes('qingstone.png'));
