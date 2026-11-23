@@ -124,23 +124,26 @@
 
   function hourInfo(i) {
     const h = H[i];
-    return `<b>${h.id}時</b>（${h.time} 點）・${h.organ}當值・${h.title}。傳統的說法：${h.suit}。<span class="q">「${h.line}」</span>`;
+    return `<b>${h.id}時</b>（${h.time} 點）・${h.organ}當值・${h.title}。傳統的說法：${E.suitFor(puzzle, h.id)}。<span class="q">「${h.line}」</span>`;
   }
 
   function whyText(cell) {
     const h = H[D.HOURS.findIndex(x => x.id === cell.hour)];
+    const suit = E.suitFor(puzzle, cell.hour);
     const se = D.SEASONS[puzzle.season];
-    const seasonNote = cell.mod ? se.note : '';
+    // 季節造成的調整，只說這個時辰自己的事；說明本身已依季節改寫時就不再重複
+    const seasonal = !!(h.bySeason && h.bySeason[puzzle.season]);
+    const seasonNote = cell.mod && !seasonal ? (se.notes[cell.hour] || '') : '';
     if (!cell.cardId) {
-      if (cell.points >= 3) return { text: `休息。${h.suit}。${seasonNote}`, tone: '' };
-      if (cell.points === 2) return { text: `休息。${h.suit}。${seasonNote}`, tone: '' };
-      if (cell.points === 1) return { text: `空著沒排事。${h.suit}。`, tone: '' };
+      if (cell.points >= 3) return { text: `休息。${suit}。${seasonNote}`, tone: '' };
+      if (cell.points === 2) return { text: `休息。${suit}。${seasonNote}`, tone: '' };
+      if (cell.points === 1) return { text: `空著沒排事。${suit}。`, tone: '' };
       return { text: `還在睡。${seasonNote}`, tone: 'bad' };
     }
     const name = D.CARDS[cell.cardId].name;
-    if (cell.kind === 'good') return { text: `${name}正合時：${h.suit}。`, tone: '' };
-    if (cell.kind === 'neutral') return { text: `${name}放在這裡還可以。${seasonNote || `傳統的說法：${h.suit}。`}`, tone: '' };
-    return { text: `${name}不太合時。${seasonNote || `傳統的說法：${h.suit}。`}`, tone: 'bad' };
+    if (cell.kind === 'good') return { text: `${name}正合時：${suit}。`, tone: '' };
+    if (cell.kind === 'neutral') return { text: `${name}放在這裡還可以。${seasonNote || `傳統的說法：${suit}。`}`, tone: '' };
+    return { text: `${name}不太合時。${seasonNote || `傳統的說法：${suit}。`}`, tone: 'bad' };
   }
 
   function renderResult(ev) {
@@ -155,7 +158,7 @@
     }
     $('r-cells').innerHTML = ev.cells.map((c, i) => {
       const h = H[i], w = whyText(c);
-      return `<li><span class="ic" aria-label="${c.points} 分">${D.ICONS[c.points]}</span>`
+      return `<li><span class="ic" aria-label="${c.points} 分">${E.iconFor(puzzle, c)}</span>`
         + `<span class="hd"><b>${h.id}時</b><small>${h.time} 點・${h.organ}・${h.title}</small></span>`
         + `<span class="why ${w.tone}">${w.text}</span><span class="q">「${h.line}」</span></li>`;
     }).join('');

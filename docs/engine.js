@@ -43,6 +43,19 @@ const RG_ENGINE = (function (D) {
     return true;
   }
 
+  // 夜裡（或冬天天還沒亮）休息拿滿分用月亮，其餘依分數
+  function iconFor(puzzle, cell) {
+    const se = D.SEASONS[puzzle.season];
+    const dark = D.NIGHT.includes(cell.hour) || se.sleepIn.includes(cell.hour);
+    if (!cell.cardId && cell.points === D.POINTS.good && dark) return D.ICONS.moon;
+    return D.ICONS[cell.points];
+  }
+  // 時辰的說明，依季節改寫
+  function suitFor(puzzle, hourId) {
+    const h = D.HOURS.find(x => x.id === hourId);
+    return (h.bySeason && h.bySeason[puzzle.season]) || h.suit;
+  }
+
   function rankFor(total) { return D.RANKS.find(r => total >= r.min).name; }
 
   // ---------- 盤面 ----------
@@ -117,7 +130,7 @@ const RG_ENGINE = (function (D) {
     return r ? { best: r.v, slots: r.pick } : null;
   }
 
-  return { HOUR_IDS, cellScore, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
+  return { HOUR_IDS, cellScore, iconFor, suitFor, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
 })(typeof RG_DATA !== 'undefined' ? RG_DATA : require('./data.js'));
 
 if (typeof module !== 'undefined') module.exports = RG_ENGINE;

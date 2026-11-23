@@ -93,6 +93,27 @@ test('季節：冬天早臥晚起，卯時繼續睡最好，起身散步只算�
   assert.strictEqual(E.cellScore(p, at('亥'), 'tea').points, 0);
 });
 
+test('圖示：夜裡休息拿滿分是月亮，白天是太陽；冬天卯時繼續睡也算夜裡', () => {
+  const w = P({ season: 'winter' }), sp = P({ season: 'spring' });
+  const cell = (p, h, cardId) => Object.assign({ hour: h, cardId: cardId || null }, E.cellScore(p, at(h), cardId || null));
+  assert.strictEqual(E.iconFor(w, cell(w, '子')), D.ICONS.moon);
+  assert.strictEqual(E.iconFor(w, cell(w, '卯')), D.ICONS.moon);
+  assert.strictEqual(E.iconFor(w, cell(w, '辰', 'breakfast')), D.ICONS[3]);
+  assert.strictEqual(E.iconFor(sp, cell(sp, '卯', 'walk')), D.ICONS[3], '春天卯時起身散步是白天的太陽');
+  assert.strictEqual(E.iconFor(w, cell(w, '巳')), D.ICONS[1]);
+});
+
+test('說明：卯時與亥時依季節改寫，冬天卯時寫「必待日光」', () => {
+  assert.ok(E.suitFor(P({ season: 'winter' }), '卯').includes('必待日光'));
+  assert.ok(!E.suitFor(P({ season: 'winter' }), '卯').includes('起身'));
+  assert.ok(E.suitFor(P({ season: 'spring' }), '卯').includes('平旦人氣生'));
+  assert.ok(E.suitFor(P({ season: 'summer' }), '亥').includes('夜臥早起'));
+  ['spring', 'summer', 'autumn', 'winter'].forEach(s => {
+    const se = D.SEASONS[s];
+    se.mustSleep.concat(se.awakeOk, se.sleepIn, Object.keys(se.rest)).forEach(h => assert.ok(se.notes[h], s + ' 缺少 ' + h + ' 的說明'));
+  });
+});
+
 // ---------- 旅人的需求 ----------
 test('需求：書生白天讀書至少兩個時辰', () => {
   const p = P({ traveler: 'scholar', cards: ['study', 'study'] });
