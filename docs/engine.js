@@ -166,6 +166,36 @@ const RG_ENGINE = (function (D, TERMS) {
     return { name, season: D.TERM_SEASON[name], start: taiwanDate((best.t - 8 * 60) * 60000) };
   }
 
+  // 這一天所在節氣的日期範圍（起始日到下一個節氣的前一天）
+  function termRange(date) {
+    const t = termOn(date);
+    let end = t.start;
+    for (let k = 1; k < 20; k++) { const nd = addDays(t.start, k); if (termOn(nd).name !== t.name) { end = addDays(nd, -1); break; } }
+    return { name: t.name, start: t.start, end };
+  }
+
+  // ---------- 連續天數與庭院 ----------
+  // dates：玩過今日一題的日期；current：到今天（或昨天）為止連續幾天；best：歷來最長
+  function streakInfo(dates, today) {
+    const set = new Set(dates);
+    let best = 0, run = 0, prev = null;
+    Array.from(set).sort().forEach(d => {
+      run = prev && addDays(prev, 1) === d ? run + 1 : 1;
+      best = Math.max(best, run);
+      prev = d;
+    });
+    let current = 0;
+    let d = set.has(today) ? today : addDays(today, -1);
+    while (set.has(d)) { current++; d = addDays(d, -1); }
+    return { current, best };
+  }
+  // 庭院依「歷來最長的連續天數」成長，中斷不會變少
+  function garden(best) {
+    const have = D.GARDEN.filter(g => best >= g.at);
+    const next = D.GARDEN.find(g => best < g.at) || null;
+    return { have, next };
+  }
+
   // ---------- 亂數 ----------
   function hash(str) {
     let h = 2166136261;
@@ -230,7 +260,7 @@ const RG_ENGINE = (function (D, TERMS) {
     ].join('\n');
   }
 
-  return { HOUR_IDS, cellScore, iconFor, suitFor, taiwanDate, dayNumber, addDays, termOn, hash, rng, travelerFor, makePuzzle, shareText, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
+  return { HOUR_IDS, cellScore, iconFor, suitFor, termRange, streakInfo, garden, taiwanDate, dayNumber, addDays, termOn, hash, rng, travelerFor, makePuzzle, shareText, evaluate, solve, newBoard, place, remove, tray, placedAt, rankFor, needInit, needStep, needOk };
 })(typeof RG_DATA !== 'undefined' ? RG_DATA : require('./data.js'),
   typeof SISHI_TERMS !== 'undefined' ? SISHI_TERMS : require('./terms.js'));
 

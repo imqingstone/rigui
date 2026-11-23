@@ -103,3 +103,42 @@ footer p{margin:0 0 6px}
 .share label{font-size:13px;color:var(--mute)}
 .share textarea{width:100%;resize:none;border:1px solid var(--line);border-radius:8px;background:var(--paper2);color:var(--ink);font-size:15px;line-height:1.6;font-family:inherit;padding:8px 10px}
 .share .primary{align-self:center}
+
+/* 收藏 */
+#collect-view{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+#collect-view[hidden]{display:none!important}
+.box{padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--paper2)}
+.box h2{font-family:var(--serif);font-weight:600;letter-spacing:.2em;color:var(--stone);margin:0 0 6px;font-size:17px}
+.box h2 small{font-family:inherit;font-size:13px;letter-spacing:1px;color:var(--gold);margin-left:6px;font-weight:400}
+.hint,.muted{font-size:13px;color:var(--mute);margin:0 0 8px}
+.garden{display:block;width:100%;height:auto;border-radius:12px}
+.garden .g-sky{fill:#fbf3e4}.garden .g-hill{fill:#ede1c8}.garden .g-ground{fill:#e7dcc6}
+.garden .g-ink{stroke:var(--stone);stroke-width:2;fill:none}
+.garden .g-roof{fill:var(--stone);opacity:.8}
+.garden .g-bamboo{stroke:#7f8f68;stroke-width:3;stroke-linecap:round}
+.garden .g-trunk{fill:#6b5a45}.garden .g-trunk-l{stroke:#6b5a45;stroke-width:3}
+.garden .g-leaf{fill:#6f8a5c;opacity:.85}
+.garden .g-stem{stroke:#6f8a5c;stroke-width:1.5}.garden .g-flower{fill:#c98a8a}
+.garden .g-stone{fill:#a39a8a}.garden .g-dial{fill:#d8ccb4;stroke:var(--stone)}
+.garden .g-lantern{fill:#d9893b;stroke:var(--stone)}.garden .g-moon{fill:#f3e3b0}
+.garden-text{font-size:14px;margin:8px 0 0;line-height:1.7}
+.grid{display:grid;gap:6px}
+.grid.terms{grid-template-columns:repeat(4,1fr)}
+.grid.travelers{grid-template-columns:repeat(3,1fr)}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;padding:6px 2px;border-radius:12px;border:1px solid var(--line);background:#fffaf0;color:var(--ink)}
+.tile b{font-family:var(--serif);font-size:16px;color:var(--stone);letter-spacing:.05em}
+.tile small{font-size:11px;color:var(--mute)}
+.tile .avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--stone);color:var(--paper2);font-family:var(--serif)}
+.tile.locked{background:transparent;border-style:dashed;opacity:.65}
+.tile.locked .avatar{background:var(--line);color:var(--mute)}
+.tile.s-spring{border-top:3px solid #6f8a5c}.tile.s-summer{border-top:3px solid #c0614a}.tile.s-autumn{border-top:3px solid #c8962f}.tile.s-winter{border-top:3px solid #5b7290}
+.detail{margin:0 0 10px;padding:10px 12px;border-left:3px solid var(--gold);background:#fffaf0;border-radius:0 10px 10px 0}
+.detail h3{margin:0 0 4px;font-family:var(--serif);color:var(--stone);letter-spacing:.15em}
+.detail h3 small{font-family:inherit;font-size:12px;color:var(--mute);margin-left:8px;letter-spacing:1px}
+.detail p{margin:0 0 6px;font-size:14px}
+.hou{list-style:none;margin:6px 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.hou li{font-family:var(--serif);font-size:15px}
+.hou span{display:inline-block;width:3em;font-size:12px;color:var(--gold);font-family:inherit}
+.confirm{margin-top:8px;padding:10px;border:1px solid var(--gold);border-radius:10px;background:#fff3d6;text-align:center;font-size:14px}
+.confirm p{margin:0}
+.modes button{min-width:92px}

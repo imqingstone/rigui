@@ -15,12 +15,28 @@
 
   // ---------- 存檔 ----------
   // { v:2, daily:{date,slots,done}, practice:{seed,date,slots,done}, history:{日期:{total,rank,share,needOk}} }
-  let store = { v: 2, daily: null, practice: null, history: {} };
+  //   terms:{節氣:第一次收錄的日期}、travelers:{旅人:第一次遇見的日期}
+  let store = { v: 2, daily: null, practice: null, history: {}, terms: {}, travelers: {} };
+  const isObj = o => o && typeof o === 'object' && !Array.isArray(o);
+  const isDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+  // 檢查讀進來的進度；格式不對就回傳 null
+  function cleanStore(d) {
+    if (!isObj(d) || d.v !== 2 || !isObj(d.history)) return null;
+    const history = {};
+    Object.entries(d.history).forEach(([k, r]) => {
+      if (isDate(k) && isObj(r) && Number.isInteger(r.total) && r.total >= 0 && r.total <= 36 && typeof r.rank === 'string' && typeof r.share === 'string') history[k] = r;
+    });
+    const pick = (o, ok) => { const out = {}; if (isObj(o)) Object.entries(o).forEach(([k, v]) => { if (ok(k) && isDate(v)) out[k] = v; }); return out; };
+    return {
+      v: 2, history,
+      daily: isObj(d.daily) ? d.daily : null,
+      practice: isObj(d.practice) ? d.practice : null,
+      terms: pick(d.terms, k => !!D.TERM_INFO[k]),
+      travelers: pick(d.travelers, k => !!D.TRAVELERS[k])
+    };
+  }
   function readStore() {
-    try {
-      const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-      if (d && d.v === 2 && typeof d.history === 'object' && d.history) store = { v: 2, daily: d.daily || null, practice: d.practice || null, history: d.history };
-    } catch (e) { /* 讀不到就從頭開始 */ }
+    try { const d = cleanStore(JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')); if (d) store = d; } catch (e) { /* 讀不到就從頭開始 */ }
   }
   function save() {
     const cur = { date: puzzle.date, slots: board.slots, done };
@@ -254,7 +270,11 @@
     if (mode === 'daily' && !store.history[today]) {
       store.history[today] = { total: ev.total, rank: ev.rank, needOk: ev.need ? ev.need.ok : true, share: E.shareText(puzzle, ev) };
     }
+    const fresh = [];
+    if (!store.terms[puzzle.term]) { store.terms[puzzle.term] = puzzle.date; fresh.push(`節氣「${puzzle.term}」`); }
+    if (!store.travelers[puzzle.traveler]) { store.travelers[puzzle.traveler] = puzzle.date; fresh.push(`旅人「${D.TRAVELERS[puzzle.traveler].name}」`); }
     save();
+    if (fresh.length) setTimeout(() => toast(`收藏了${fresh.join('、')}`), 400);
     $('info').textContent = '亮起來的時辰排得順，暗下來的不太合時。點日晷上的時辰可以看說明。';
     render();
     $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
@@ -274,13 +294,136 @@
     window.scrollTo(0, 0);
   }
 
+  // ---------- 收藏 ----------
+  let view = 'game';
+  function setView(v) {
+    view = v;
+    $('game-view').hidden = v !== 'game';
+    $('collect-view').hidden = v !== 'collect';
+    $('mode-note').hidden = v !== 'game';
+    $('tab-collect').setAttribute('aria-pressed', String(v === 'collect'));
+    if (v === 'collect') {
+      $('tab-daily').setAttribute('aria-pressed', 'false');
+      $('tab-practice').setAttribute('aria-pressed', 'false');
+      renderCollect();
+    } else render();
+  }
+  const SEASON_ORDER = ['spring', 'summer', 'autumn', 'winter'];
+  const TERM_ORDER = Object.keys(D.TERM_SEASON); // 立春到大寒
+  const md = d => { const [, m, dd] = d.split('-').map(Number); return `${m}/${dd}`; };
+
+  function drawGarden(have) {
+    const on = id => have.some(g => g.id === id);
+    let h = '<rect class="g-sky" x="0" y="0" width="360" height="190"/>'
+      + '<path class="g-hill" d="M0,112 C60,92 120,104 180,96 C240,88 300,102 360,92 L360,190 L0,190 Z"/>'
+      + '<ellipse class="g-ground" cx="180" cy="160" rx="170" ry="26"/>';
+    if (on('moon')) h += '<circle class="g-moon" cx="318" cy="34" r="16"/>';
+    if (on('pavilion')) h += '<path class="g-ink" d="M22,124 L22,92 M70,124 L70,92 M14,94 L46,72 L78,94 Z"/><path class="g-roof" d="M14,94 L46,72 L78,94 Z"/>';
+    if (on('fence')) { for (let x = 92; x <= 268; x += 11) h += `<line class="g-bamboo" x1="${x}" y1="138" x2="${x}" y2="112"/>`; h += '<line class="g-bamboo" x1="88" y1="120" x2="272" y2="120"/><line class="g-bamboo" x1="88" y1="131" x2="272" y2="131"/>'; }
+    if (on('tree')) h += '<path class="g-trunk" d="M300,152 L304,104 L312,104 L316,152 Z"/><circle class="g-leaf" cx="296" cy="92" r="22"/><circle class="g-leaf" cx="322" cy="88" r="20"/><circle class="g-leaf" cx="309" cy="70" r="20"/>';
+    if (on('sapling')) h += '<line class="g-trunk-l" x1="62" y1="158" x2="62" y2="128"/><circle class="g-leaf" cx="56" cy="124" r="9"/><circle class="g-leaf" cx="68" cy="120" r="9"/>';
+    if (on('flowers')) [[96, 168], [108, 172], [120, 167], [132, 172]].forEach(([x, y]) => { h += `<line class="g-stem" x1="${x}" y1="${y}" x2="${x}" y2="${y - 12}"/><circle class="g-flower" cx="${x}" cy="${y - 14}" r="4"/>`; });
+    if (on('bench')) h += '<rect class="g-stone" x="214" y="150" width="40" height="8" rx="2"/><rect class="g-stone" x="218" y="158" width="6" height="10"/><rect class="g-stone" x="244" y="158" width="6" height="10"/>';
+    if (on('lamp')) h += '<line class="g-ink" x1="272" y1="170" x2="272" y2="132"/><rect class="g-lantern" x="265" y="118" width="14" height="16" rx="5"/>';
+    if (on('dial')) h += '<rect class="g-stone" x="172" y="138" width="16" height="26"/><ellipse class="g-dial" cx="180" cy="136" rx="26" ry="8"/><line class="g-ink" x1="180" y1="136" x2="194" y2="128"/>';
+    $('garden').innerHTML = h;
+  }
+
+  function renderCollect() {
+    const dates = Object.keys(store.history);
+    const st = E.streakInfo(dates, today);
+    const g = E.garden(st.best);
+    drawGarden(g.have);
+    $('garden-desc').textContent = (dates.length
+      ? `連續 ${st.current} 天，最長 ${st.best} 天。庭院裡有：${g.have.map(x => x.name).join('、')}。`
+      : '庭院還空著。玩今日一題，連續的天數越多，庭院就會長出越多東西。')
+      + (g.next ? `連續 ${g.next.at} 天會長出「${g.next.name}」。` : '庭院已經長齊了。') + '中斷了也不會清空，只是暫停成長。';
+
+    const got = store.terms;
+    $('term-count').textContent = `${Object.keys(got).length}／24`;
+    $('term-grid').innerHTML = TERM_ORDER.map(name => {
+      const se = D.SEASONS[D.TERM_SEASON[name]];
+      return got[name]
+        ? `<button type="button" class="tile s-${D.TERM_SEASON[name]}" data-term="${name}"><b>${name}</b><small>${se.name}</small></button>`
+        : `<button type="button" class="tile locked" data-term="${name}" aria-label="還沒收錄"><b>？</b><small>${se.name}</small></button>`;
+    }).join('');
+    $('hou-source').textContent = D.HOU_SOURCE;
+
+    $('trav-count').textContent = `${Object.keys(store.travelers).length}／${D.DAILY.travelers.length}`;
+    $('trav-grid').innerHTML = D.DAILY.travelers.map(id => store.travelers[id]
+      ? `<button type="button" class="tile" data-trav="${id}"><span class="avatar">${D.TRAVELERS[id].name[0]}</span><b>${D.TRAVELERS[id].name}</b></button>`
+      : `<button type="button" class="tile locked" data-trav="${id}" aria-label="還沒遇見"><span class="avatar">？</span><b>還沒遇見</b></button>`).join('');
+  }
+  function showTerm(name) {
+    const el = $('term-detail');
+    const when = store.terms[name];
+    if (!when) { el.hidden = false; el.innerHTML = `<p class="muted">這個節氣還沒收錄。在${name}期間排過一天就會收錄。</p>`; return; }
+    const info = D.TERM_INFO[name], r = E.termRange(when);
+    el.hidden = false;
+    el.innerHTML = `<h3>${name}<small>${md(r.start)}–${md(r.end)}</small></h3><p>${info.intro}</p>`
+      + `<ol class="hou">${info.hou.map((x, i) => `<li><span>${['初候', '二候', '三候'][i]}</span>${x}</li>`).join('')}</ol>`
+      + `<p class="muted">第一次收錄：${when}</p>`;
+  }
+  function showTraveler(id) {
+    const el = $('trav-detail');
+    const t = D.TRAVELERS[id], when = store.travelers[id];
+    el.hidden = false;
+    el.innerHTML = when
+      ? `<h3>${t.name}</h3><p>${t.bio}</p>${t.need ? `<p class="muted">心願：${t.need.text}</p>` : ''}<p class="muted">第一次遇見：${when}</p>`
+      : '<p class="muted">還沒遇見這位旅人。每天會有不同的旅人來到驛站。</p>';
+  }
+
+  // ---------- 進度備份 ----------
+  function exportSave() {
+    const pad = n => String(n).padStart(2, '0');
+    const d = new Date();
+    const blob = new Blob([JSON.stringify({ app: 'rigui', v: 2, savedAt: d.toISOString(), data: store }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `日晷進度-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('已匯出進度');
+  }
+  let pendingImport = null;
+  function readImport(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const d = JSON.parse(reader.result);
+        const clean = d && d.app === 'rigui' ? cleanStore(d.data) : null;
+        if (!clean) throw new Error('bad');
+        pendingImport = clean;
+        $('import-confirm').hidden = false;
+      } catch (e) { toast('這個檔案不是日晷的進度備份'); }
+    };
+    reader.onerror = () => toast('讀取檔案失敗');
+    reader.readAsText(file);
+  }
+
   buildFace();
   readStore();
   open('daily');
-  $('tab-daily').addEventListener('click', () => { if (mode !== 'daily') { open('daily'); $('info').textContent = '今天的題目。先點一張行程，再點日晷上的時辰。'; render(); } });
-  $('tab-practice').addEventListener('click', () => { if (mode !== 'practice') { open('practice'); $('info').textContent = '練習題，不計入紀錄。先點一張行程，再點日晷上的時辰。'; render(); } });
+  $('tab-daily').addEventListener('click', () => { if (view !== 'game') { view = 'game'; setView('game'); } if (mode !== 'daily') { open('daily'); $('info').textContent = '今天的題目。先點一張行程，再點日晷上的時辰。'; render(); } });
+  $('tab-practice').addEventListener('click', () => { if (view !== 'game') { view = 'game'; setView('game'); } if (mode !== 'practice') { open('practice'); $('info').textContent = '練習題，不計入紀錄。先點一張行程，再點日晷上的時辰。'; render(); } });
   $('btn-next').addEventListener('click', () => { open('practice', true); $('info').textContent = '換了一題新的練習。'; render(); window.scrollTo(0, 0); });
   $('btn-copy').addEventListener('click', onCopy);
+  $('tab-collect').addEventListener('click', () => setView('collect'));
+  $('term-grid').addEventListener('click', ev => { const b = ev.target.closest('[data-term]'); if (b) showTerm(b.dataset.term); });
+  $('trav-grid').addEventListener('click', ev => { const b = ev.target.closest('[data-trav]'); if (b) showTraveler(b.dataset.trav); });
+  $('btn-export').addEventListener('click', exportSave);
+  $('btn-import').addEventListener('click', () => $('file-import').click());
+  $('file-import').addEventListener('change', ev => { const f = ev.target.files[0]; if (f) readImport(f); ev.target.value = ''; });
+  $('btn-import-no').addEventListener('click', () => { pendingImport = null; $('import-confirm').hidden = true; });
+  $('btn-import-yes').addEventListener('click', () => {
+    if (!pendingImport) return;
+    store = pendingImport; pendingImport = null;
+    $('import-confirm').hidden = true;
+    open(mode);
+    toast('已匯入進度');
+    renderCollect();
+  });
   // 跨過午夜時換成新的一天
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;

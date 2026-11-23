@@ -11,8 +11,10 @@
   <nav class="modes" aria-label="模式">
     <button id="tab-daily" type="button" aria-pressed="true">今日一題</button>
     <button id="tab-practice" type="button" aria-pressed="false">練習</button>
+    <button id="tab-collect" type="button" aria-pressed="false">收藏</button>
   </nav>
   <p class="mode-note" id="mode-note"></p>
+  <div id="game-view">
   <section class="traveler" id="traveler" aria-live="polite"></section>
 
   <section class="dial-wrap" aria-label="日晷：十二時辰">
@@ -48,6 +50,40 @@
     <p class="source" id="r-source"></p>
     <div class="actions"><button id="btn-again" class="ghost" type="button">再排一次</button><button id="btn-next" class="primary" type="button" hidden>換一題</button></div>
   </section>
+  </div>
+
+  <div id="collect-view" hidden>
+    <section class="box">
+      <h2>驛站庭院</h2>
+      <svg class="garden" id="garden" viewBox="0 0 360 190" role="img" aria-labelledby="garden-desc"></svg>
+      <p class="garden-text" id="garden-desc"></p>
+    </section>
+
+    <section class="box">
+      <h2>節氣圖鑑 <small id="term-count"></small></h2>
+      <p class="hint">在某個節氣期間排過一天，就收錄那一頁。</p>
+      <div class="detail" id="term-detail" hidden></div>
+      <div class="grid terms" id="term-grid"></div>
+      <p class="source" id="hou-source"></p>
+    </section>
+
+    <section class="box">
+      <h2>旅人圖鑑 <small id="trav-count"></small></h2>
+      <div class="detail" id="trav-detail" hidden></div>
+      <div class="grid travelers" id="trav-grid"></div>
+    </section>
+
+    <section class="box">
+      <h2>進度備份</h2>
+      <p class="hint">進度只保存在這個瀏覽器。換手機或清除瀏覽器資料前，請先匯出備份。</p>
+      <div class="actions"><button id="btn-export" class="ghost" type="button">匯出進度</button><button id="btn-import" class="ghost" type="button">匯入進度</button></div>
+      <input id="file-import" type="file" accept="application/json,.json" hidden>
+      <div class="confirm" id="import-confirm" hidden>
+        <p>匯入後會取代目前的進度，確定嗎？</p>
+        <div class="actions"><button id="btn-import-no" class="ghost" type="button">取消</button><button id="btn-import-yes" class="primary" type="button">確定匯入</button></div>
+      </div>
+    </section>
+  </div>
 </main>
 
 <footer>

@@ -341,6 +341,46 @@ test('分享文字：日期與節氣、兩行各六個符號、分數與評等�
   assert.ok(E.shareText(E.makePuzzle('2026-11-23', { seed: 's' }), ev).includes('（練習）'));
 });
 
+// ---------- 收集與回訪 ----------
+test('節氣圖鑑：二十四節氣都有三候與介紹；日期範圍正確', () => {
+  assert.deepStrictEqual(Object.keys(D.TERM_INFO).sort(), Object.keys(D.TERM_SEASON).sort());
+  Object.entries(D.TERM_INFO).forEach(([k, v]) => { assert.strictEqual(v.hou.length, 3, k); assert.ok(v.intro, k); });
+  assert.deepStrictEqual(E.termRange('2026-11-23'), { name: '小雪', start: '2026-11-22', end: '2026-12-06' });
+  assert.strictEqual(E.termRange('2026-12-31').name, '冬至');
+  // 一年裡每一天的節氣範圍都包含那一天，而且長度合理
+  let d = '2027-01-01';
+  for (let i = 0; i < 365; i++) {
+    const r = E.termRange(d);
+    assert.ok(r.start <= d && d <= r.end, d);
+    const len = E.dayNumber(r.end) - E.dayNumber(r.start) + 1;
+    assert.ok(len >= 13 && len <= 17, d + ' 長度 ' + len);
+    d = E.addDays(d, 1);
+  }
+});
+
+test('旅人圖鑑：每位旅人都有介紹', () => {
+  D.DAILY.travelers.forEach(id => assert.ok(D.TRAVELERS[id].bio, id));
+});
+
+test('連續天數：今天或昨天為止的連續天數，與歷來最長', () => {
+  const s = E.streakInfo;
+  assert.deepStrictEqual(s([], '2026-11-23'), { current: 0, best: 0 });
+  assert.deepStrictEqual(s(['2026-11-21', '2026-11-22', '2026-11-23'], '2026-11-23'), { current: 3, best: 3 });
+  assert.deepStrictEqual(s(['2026-11-21', '2026-11-22'], '2026-11-23'), { current: 2, best: 2 }, '今天還沒玩，昨天以前的連續還算');
+  assert.deepStrictEqual(s(['2026-11-20', '2026-11-21'], '2026-11-23'), { current: 0, best: 2 }, '中斷了');
+  assert.deepStrictEqual(s(['2026-12-31', '2027-01-01', '2026-12-30'], '2027-01-01'), { current: 3, best: 3 }, '跨年');
+});
+
+test('庭院：依歷來最長的連續天數成長，中斷不會變少', () => {
+  assert.strictEqual(E.garden(0).have.length, 0);
+  assert.strictEqual(E.garden(1).have[0].id, 'dial');
+  assert.strictEqual(E.garden(3).next.at, 5);
+  assert.strictEqual(E.garden(30).next, null);
+  assert.strictEqual(E.garden(30).have.length, D.GARDEN.length);
+  for (let n = 1; n < 40; n++) assert.ok(E.garden(n).have.length >= E.garden(n - 1).have.length);
+  ['tree', 'lamp', 'bench'].forEach(id => assert.ok(D.GARDEN.some(g => g.id === id), '規格要求的 ' + id));
+});
+
 // ---------- 文字 ----------
 const textFiles = () => {
   const dir = path.join(__dirname, '../docs');
@@ -357,11 +397,15 @@ test('文字：避開指定用詞', () => {
   });
 });
 
-test('文字：不出現葷食與五辛', () => {
-  const banned = ['肉', '雞', '鴨', '鵝', '魚', '豬', '牛', '羊', '蝦', '蟹', '海鮮', '蔥', '蒜', '韭', '薤', '興渠'];
+test('文字：不出現葷食與五辛（三候是引用的物候原文，只檢查五辛與食物字眼）', () => {
+  const animals = ['雞', '鴨', '鵝', '魚', '豬', '牛', '羊', '蝦', '蟹'];
+  const always = ['肉', '葷', '海鮮', '蔥', '蒜', '韭', '薤', '興渠'];
+  const hou = Object.values(D.TERM_INFO).flatMap(x => x.hou);
+  hou.forEach(h => always.forEach(w => assert.ok(!h.includes(w), '三候「' + h + '」出現「' + w + '」')));
   textFiles().forEach(f => {
-    const t = fs.readFileSync(f, 'utf8');
-    banned.forEach(w => assert.ok(!t.includes(w), path.basename(f) + ' 出現「' + w + '」'));
+    let t = fs.readFileSync(f, 'utf8');
+    hou.forEach(h => { t = t.split(`'${h}'`).join(''); });
+    always.concat(animals).forEach(w => assert.ok(!t.includes(w), path.basename(f) + ' 出現「' + w + '」'));
   });
 });
 
